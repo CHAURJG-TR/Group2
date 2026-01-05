@@ -2,202 +2,260 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>教室分組系統（防呆：不能同組）</title>
+<title>教室分組座位系統</title>
 
-<!-- PDF -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-<!-- 拖拉 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 
 <style>
-body {
-  font-family: "Noto Sans TC","Microsoft JhengHei",sans-serif;
-  background:#f4f6f8;
-  padding:20px;margin:0;
+:root{
+  --bg:#eef2f7;
+  --card:#ffffff;
+  --seat:#e9edf3;
+  --seat-hover:#dfe6f1;
+  --stage:#2f3640;
+  --accent:#4b7bec;
 }
-h1{font-size:28px;}
-textarea{width:100%;height:100px;font-size:18px;margin-bottom:10px;}
-button{font-size:18px;padding:8px 14px;margin:4px;cursor:pointer;}
 
-#stage{margin-top:20px;background:#f4f6f8;padding:10px;}
-.stage-board{
-  background:#333;color:#fff;text-align:center;
-  padding:14px;font-size:28px;margin-bottom:20px;
+body{
+  font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  background:linear-gradient(180deg,#eef2f7,#dde3ec);
+  margin:0;
+  padding:20px;
+  color:#222;
 }
-.groups{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+
+h1{margin:0 0 10px}
+h3{margin:14px 0 6px}
+
+input,textarea{
+  width:100%;
+  font-size:17px;
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #cfd6e0;
+  box-sizing:border-box;
+}
+
+textarea{min-height:80px}
+
+button{
+  font-size:18px;
+  padding:10px 14px;
+  margin:6px 6px 6px 0;
+  border-radius:10px;
+  border:none;
+  background:var(--accent);
+  color:#fff;
+  cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
+button:hover{opacity:.9}
+
+.stage{
+  background:linear-gradient(180deg,#444,#222);
+  color:#fff;
+  font-size:30px;
+  text-align:center;
+  padding:16px;
+  margin:20px 0;
+  border-radius:14px;
+  box-shadow:0 6px 16px rgba(0,0,0,.3);
+  letter-spacing:4px;
+}
+
+.groups{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:22px;
+}
+
 .group{
-  background:#fff;border-radius:12px;padding:10px;
+  background:var(--card);
+  border-radius:18px;
+  padding:14px;
+  box-shadow:0 10px 22px rgba(0,0,0,.12);
 }
-.group h3{text-align:center;margin:0 0 10px;}
+
+.group h3{
+  text-align:center;
+  margin:6px 0 10px;
+  font-size:22px;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+}
+
 .seat{
-  background:#e3e7ee;padding:8px;margin:6px 0;
-  border-radius:6px;font-size:22px;
-  cursor:pointer;text-align:center;
+  flex:1;
+  margin:6px;
+  background:var(--seat);
+  border-radius:10px;
+  padding:12px 6px;
+  text-align:center;
+  font-size:22px;
+  cursor:grab;
+  box-shadow:inset 0 0 0 1px #cfd6e0,
+             0 3px 6px rgba(0,0,0,.15);
+  transition:.15s;
 }
-.face-row{display:flex;justify-content:space-between;}
-.back-seat{text-align:center;margin-top:10px;}
-.column-mode .groups{grid-template-columns:1fr;}
-.column{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
-.fullscreen{font-size:34px;}
+
+.seat:hover{
+  background:var(--seat-hover);
+}
+
+.seat:active{
+  cursor:grabbing;
+  transform:scale(.97);
+}
+
+.back{
+  margin-top:6px;
+  display:flex;
+  justify-content:center;
+}
+
+hr{
+  border:none;
+  border-top:2px dashed #d0d7e2;
+  margin:8px 0;
+}
+
+/* 投影模式 */
+.fullscreen{
+  background:#000;
+  color:#fff;
+}
+.fullscreen .group{
+  background:#111;
+}
+.fullscreen .seat{
+  font-size:34px;
+  background:#222;
+  color:#fff;
+}
+.fullscreen .group h3{
+  font-size:30px;
+}
 </style>
 </head>
+
 <body>
 
-<h1>教室分組系統（防呆：不能同組）</h1>
+<h1>📚 教室分組座位系統</h1>
 
-<h3>📋 男生名單（10 人）</h3>
-<textarea id="maleList" placeholder="每行一位男生"></textarea>
+<h3>🔢 分組設定</h3>
+<input id="groupCount" type="number" value="4" placeholder="總組數（偶數）">
+<input id="groupSize" type="number" value="5" placeholder="每組人數">
 
-<h3>📋 女生名單（10 人）</h3>
-<textarea id="femaleList" placeholder="每行一位女生"></textarea>
+<h3>👦 男生姓名（每行一人）</h3>
+<textarea id="maleList"></textarea>
 
-<h3>🚫 不能同組（每行一組，用逗號分隔，例如：小明,小華）</h3>
-<textarea id="banRules" placeholder="小明,小華"></textarea>
+<h3>👧 女生姓名（每行一人）</h3>
+<textarea id="femaleList"></textarea>
 
-<div>
-  <button id="generateBtn" onclick="generate()">生成小組</button>
-  <button id="modeBtn" onclick="toggleMode()">📊 直排模式</button>
-  <button onclick="toggleFullscreen()">🖥️ 投影模式</button>
-  <button onclick="exportPDF()">🖨️ 匯出 PDF</button>
-  <button onclick="resetAll()">🔄 重設</button>
-</div>
+<h3>🚫 不能同組（每行 A,B）</h3>
+<textarea id="banRules"></textarea>
 
-<div id="stage"></div>
+<button onclick="generate()">🎯 生成座位</button>
+<button onclick="toggleFullscreen()">🖥️ 投影模式</button>
+<button onclick="exportPDF()">🖨️ 匯出 PDF</button>
+
+<div id="canvasArea"></div>
 
 <script>
-let columnMode=false;
+const shuffle=a=>[...a].sort(()=>Math.random()-0.5);
 
-// 隨機排列
-function shuffle(arr){return [...arr].sort(()=>Math.random()-0.5);}
+function generate(){
+  const gCount=+groupCount.value;
+  const gSize=+groupSize.value;
 
-// 防呆座位建立
-function createSeat(name){
+  if(gCount<2||gCount%2!==0){alert("❌ 組數必須是偶數");return;}
+
+  const males=maleList.value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const females=femaleList.value.split("\n").map(s=>s.trim()).filter(Boolean);
+
+  if(new Set([...males,...females]).size!==males.length+females.length){
+    alert("❌ 有重複姓名");return;
+  }
+
+  const mg=gCount/2,fg=gCount/2;
+  if(males.length!==mg*gSize||females.length!==fg*gSize){
+    alert("❌ 人數無法平均分組");return;
+  }
+
+  const rules=banRules.value.split("\n").map(r=>r.split(",").map(s=>s.trim())).filter(r=>r.length===2);
+
+  const groups=[],sm=shuffle(males),sf=shuffle(females);
+  for(let i=0;i<mg;i++)groups.push(sm.slice(i*gSize,(i+1)*gSize));
+  for(let i=0;i<fg;i++)groups.push(sf.slice(i*gSize,(i+1)*gSize));
+
+  for(const r of rules){
+    for(const g of groups){
+      if(r.every(n=>g.includes(n))){
+        alert(`❌ 規則衝突：${r.join("、")}`);return;
+      }
+    }
+  }
+  render(groups);
+}
+
+function render(groups){
+  canvasArea.innerHTML="";
+  canvasArea.appendChild(Object.assign(document.createElement("div"),{
+    className:"stage",textContent:"📢 講台"
+  }));
+
+  const box=document.createElement("div");
+  box.className="groups";
+
+  groups.forEach((g,i)=>{
+    const d=document.createElement("div");
+    d.className="group";
+    d.innerHTML=`<h3>第 ${i+1} 組</h3>`;
+
+    const r1=document.createElement("div");r1.className="row";
+    const r2=document.createElement("div");r2.className="row";
+    const back=document.createElement("div");back.className="back";
+
+    [r1,r2,back].forEach(x=>Sortable.create(x,{group:`g${i}`}));
+
+    g.slice(0,2).forEach(n=>r1.appendChild(seat(n)));
+    g.slice(2,4).forEach(n=>r2.appendChild(seat(n)));
+    back.appendChild(seat(g[4]));
+
+    d.append(r1,r2,document.createElement("hr"),back);
+    box.appendChild(d);
+  });
+
+  canvasArea.appendChild(box);
+}
+
+function seat(name){
   const d=document.createElement("div");
   d.className="seat";
   d.textContent=name;
-  d.onclick=()=>{
-    const newName=prompt("請輸入新的學生姓名：",d.textContent);
-    if(newName===null) return;
-    const trimmed=newName.trim();
-    if(!trimmed){alert("❌ 姓名不能是空白");return;}
-    const seats=document.querySelectorAll(".seat");
-    for(const s of seats){if(s!==d && s.textContent===trimmed){alert("❌ 已有相同姓名");return;}}
-    d.textContent=trimmed;
-  };
   return d;
 }
 
-// 生成小組
-function generate(){
-  const maleStudents=document.getElementById("maleList").value.split("\n").map(s=>s.trim()).filter(Boolean);
-  const femaleStudents=document.getElementById("femaleList").value.split("\n").map(s=>s.trim()).filter(Boolean);
-  const banRules=document.getElementById("banRules").value.split("\n").map(s=>s.trim()).filter(Boolean).map(line=>line.split(",").map(n=>n.trim()));
-
-  // 防呆：人數不足
-  if(maleStudents.length<10){alert("❌ 男生不足 10 人"); return;}
-  if(femaleStudents.length<10){alert("❌ 女生不足 10 人"); return;}
-
-  // 防呆：檢查 banRules 是否有不在名單的名字
-  for(const pair of banRules){
-    for(const name of pair){
-      if(!maleStudents.includes(name) && !femaleStudents.includes(name)){
-        alert(`❌ 「${name}」不在名單中`);
-        return;
-      }
-    }
-  }
-
-  // 隨機排列
-  const males=shuffle(maleStudents);
-  const females=shuffle(femaleStudents);
-
-  // 檢查 banRules 衝突
-  const groups=[
-    males.slice(0,5),males.slice(5,10),
-    females.slice(0,5),females.slice(5,10)
-  ];
-
-  for(const pair of banRules){
-    for(const group of groups){
-      if(pair.every(name=>group.includes(name))){
-        alert(`❌ 規則衝突：${pair.join("、")} 同組了`);
-        return;
-      }
-    }
-  }
-
-  renderGroups(groups);
-}
-
-// 渲染 4+1 面對面
-function renderGroups(groups){
-  stage.innerHTML="";
-  stage.className = columnMode ? "column-mode" : "";
-
-  // 講台
-  const board=document.createElement("div");
-  board.className="stage-board";
-  board.textContent="📢 講台";
-  stage.appendChild(board);
-
-  const container=document.createElement("div");
-  container.className="groups";
-
-  groups.forEach((group,idx)=>{
-    const gDiv=document.createElement("div");
-    gDiv.className="group";
-    const type=(idx<2)?"男生":"女生";
-    gDiv.innerHTML=`<h3>第 ${idx+1} 組 (${type})</h3>`;
-
-    const faceRow1=document.createElement("div"); faceRow1.className="face-row";
-    const faceRow2=document.createElement("div"); faceRow2.className="face-row";
-    for(let i=0;i<2;i++) faceRow1.appendChild(createSeat(group[i]));
-    for(let i=0;i<2;i++) faceRow2.appendChild(createSeat(group[i+2]));
-    const backSeat=document.createElement("div"); backSeat.className="back-seat";
-    backSeat.appendChild(createSeat(group[4]));
-
-    gDiv.appendChild(faceRow1); gDiv.appendChild(faceRow2); gDiv.appendChild(backSeat);
-    container.appendChild(gDiv);
-  });
-
-  stage.appendChild(container);
-
-  // 組內拖拉
-  document.querySelectorAll(".group").forEach(g=>{
-    new Sortable(g,{animation:150,filter:"h3"});
-  });
-}
-
-// 模式切換
-function toggleMode(){
-  columnMode=!columnMode;
-  modeBtn.textContent=columnMode?"📊 小組模式":"📊 直排模式";
-  generateBtn.textContent=columnMode?"生成直排":"生成小組";
-}
-
-// 投影模式
 function toggleFullscreen(){
-  if(!document.fullscreenElement){document.documentElement.requestFullscreen();document.body.classList.add("fullscreen");}
-  else{document.exitFullscreen();document.body.classList.remove("fullscreen");}
+  document.body.classList.toggle("fullscreen");
 }
 
-// 匯出 PDF
 function exportPDF(){
-  html2canvas(stage,{scale:2}).then(canvas=>{
-    const img=canvas.toDataURL("image/png");
+  html2canvas(canvasArea,{scale:2}).then(c=>{
     const pdf=new jspdf.jsPDF("p","mm","a4");
-    const w=210;
-    const h=canvas.height*w/canvas.width;
-    pdf.addImage(img,"PNG",0,10,w,h);
+    const img=c.toDataURL("image/png");
+    const w=190;
+    const h=c.height*w/c.width;
+    pdf.addImage(img,"PNG",10,10,w,h);
     pdf.save("座位表.pdf");
   });
 }
-
-// 重設
-function resetAll(){ stage.innerHTML=""; }
 </script>
+
 </body>
 </html>
-
